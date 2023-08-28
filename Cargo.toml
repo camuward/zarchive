@@ -1,0 +1,9 @@
+[package]
+name = "zarchive2"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+memmap2 = "0.7.1"
+zstd = "0.12.4"
