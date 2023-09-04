@@ -1,6 +1,10 @@
-// pub fn add(left: usize, right: usize) -> usize {
-//     left + right
-// }
+#![cfg_attr(not(feature = "std"), no_std)]
+
+pub use self::pack::ArchiveReader;
+pub mod pack;
+
+#[cfg(feature = "zerocopy")]
+pub mod zerocopy;
 
 #[cfg(test)]
 mod tests {
