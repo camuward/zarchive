@@ -1,5 +1,11 @@
 use core2::io::{Cursor, Read, Seek, Write};
 
+pub use self::entry::*;
+pub use self::path::*;
+pub use self::path_nodes::*;
+
+mod entry;
+mod path;
 mod path_nodes;
 
 pub struct DirEntry {}
@@ -16,6 +22,7 @@ impl<R: Read> ArchiveReader<R> {
         Self { inner, pos: 0 }
     }
 
+    /// Returns the underlying reader.
     pub fn into_inner(self) -> R {
         self.inner
     }
@@ -37,6 +44,9 @@ impl<R: Read + Seek + Clone> Clone for ArchiveReader<R> {
         Self { inner: self.inner.clone(), pos: self.pos }
     }
 }
+
+#[cfg(feature = "std")]
+pub use self::std::*;
 
 #[cfg(feature = "std")]
 mod std {

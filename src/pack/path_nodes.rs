@@ -1,5 +1,6 @@
 use core2::io::Read;
-use unix_path::Path;
+
+use super::*;
 
 pub struct PathNodes<'a> {
     pos: u64,
