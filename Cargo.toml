@@ -6,8 +6,13 @@ license = "MIT OR Apache-2.0"
 description = "low-level library for manipulating the zarchive format"
 
 [features]
-default = ["std", "zerocopy"]
-zerocopy = ["dep:zerocopy"]
+default = ["alloc", "std", "zerocopy"]
+alloc = [
+    "core2/alloc",
+    "encoding_rs/alloc",
+    "unix_path/alloc",
+    "zerocopy/alloc",
+]
 std = [
     "core2/std",
     "thiserror_core2/std",
@@ -15,6 +20,7 @@ std = [
     "dep:zstd",
     "zstd-safe/std",
 ]
+zerocopy = ["dep:zerocopy"]
 
 [dependencies]
 core2 = { version = "0.4.0", default-features = false }
