@@ -4,9 +4,8 @@ use zerocopy::big_endian as be;
 use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
 
 #[repr(transparent)]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, AsBytes, FromBytes, FromZeroes, Unaligned
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(AsBytes, FromBytes, FromZeroes, Unaligned)]
 /// A big-endian 16-bit unsigned integer.
 pub struct U16(be::U16);
 
@@ -28,9 +27,8 @@ impl U16 {
 }
 
 #[repr(transparent)]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, AsBytes, FromBytes, FromZeroes, Unaligned
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(AsBytes, FromBytes, FromZeroes, Unaligned)]
 /// A big-endian 32-bit unsigned integer.
 pub struct U32(be::U32);
 
@@ -52,9 +50,8 @@ impl U32 {
 }
 
 #[repr(transparent)]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, AsBytes, FromBytes, FromZeroes, Unaligned
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(AsBytes, FromBytes, FromZeroes, Unaligned)]
 /// A big-endian 64-bit unsigned integer.
 pub struct U64(be::U64);
 

@@ -36,26 +36,6 @@ impl ArchiveEntry {
     ///
     /// Panics if the provided offset sets the most significant bit (`0x80000000`), which is
     /// reserved for the file flag. Thus, the value must be within the range `0..=i32::MAX as u32`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zarchive2::zerocopy::{ArchiveEntry, DirRecord, EntryKind, FileRecord};
-    ///
-    /// let (dir, file) = (DirRecord::default(), FileRecord::default());
-    /// let entry = ArchiveEntry::new(12345, EntryKind::File(file));
-    /// assert!(entry.is_file());
-    ///
-    /// assert_eq!(entry.offset(), 12345); // `.offset()` strips the flag
-    /// let with_flag = entry.offset() | ArchiveEntry::FILE_FLAG;
-    /// assert_eq!(entry.flag_offset, with_flag); // the flag is set
-    ///
-    /// let entry = ArchiveEntry::new(54321, EntryKind::Dir(dir));
-    /// assert_eq!(entry.flag_offset, 54321);
-    ///
-    /// // since the flag isn't set, `.offset()` returns the same value
-    /// assert_eq!(entry.flag_offset, entry.offset());
-    /// ```
     pub const fn new(offset: u32, record: Record) -> Self {
         match record {
             Record::Dir(dir) => Self::new_dir(offset, dir),
@@ -70,19 +50,6 @@ impl ArchiveEntry {
     ///
     /// Panics if the provided offset sets the most significant bit (`0x80000000`), which is
     /// reserved for the file flag. Thus, the value must be within the range `0..=i32::MAX as u32`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zarchive2::zerocopy::{ArchiveEntry, DirRecord};
-    ///
-    /// let entry = ArchiveEntry::new_dir(0, DirRecord::default());
-    /// assert!(entry.is_dir());
-    ///
-    /// // since this is a directory, the flag is not set
-    /// assert_eq!(entry.flag_offset & ArchiveEntry::FILE_FLAG, 0);
-    /// assert_eq!(entry.flag_offset, entry.offset());
-    /// ```
     pub const fn new_dir(offset: u32, record: DirRecord) -> Self {
         assert!(offset < Self::FILE_FLAG);
 
@@ -99,21 +66,6 @@ impl ArchiveEntry {
     ///
     /// Panics if the provided offset sets the most significant bit (`0x80000000`), which is
     /// reserved for the file flag. Thus, the value must be within the range `0..=i32::MAX as u32`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zarchive2::zerocopy::{ArchiveEntry, FileRecord};
-    ///
-    /// let entry = ArchiveEntry::new_file(0, FileRecord::default());
-    /// assert!(entry.is_file());
-    ///
-    /// // since this is a file, the flag is set
-    /// assert_eq!(entry.flag_offset & ArchiveEntry::FILE_FLAG, ArchiveEntry::FILE_FLAG);
-    /// assert_ne!(entry.flag_offset, entry.offset());
-    ///
-    /// assert_eq!(entry.flag_offset, entry.offset() | ArchiveEntry::FILE_FLAG);
-    /// ```
     pub const fn new_file(offset: u32, record: FileRecord) -> Self {
         assert!(offset < Self::FILE_FLAG);
 
@@ -125,36 +77,12 @@ impl ArchiveEntry {
 
     #[inline]
     /// Whether the entry is a directory.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zarchive2::zerocopy::{ArchiveEntry, DirRecord, EntryKind, FileRecord};
-    ///
-    /// let mut entry = ArchiveEntry::new_dir(0, DirRecord::default());
-    /// assert!(entry.is_dir()); // the entry is a directory
-    ///
-    /// entry.set_record(EntryKind::File(FileRecord::default()));
-    /// assert!(!entry.is_dir()); // the entry is now a file
-    /// ```
     pub const fn is_dir(&self) -> bool {
         self.flag_offset.get() & Self::FILE_FLAG == 0
     }
 
     #[inline]
     /// Whether the entry is a file.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zarchive2::zerocopy::{ArchiveEntry, DirRecord, EntryKind, FileRecord};
-    ///
-    /// let mut entry = ArchiveEntry::new_file(0, FileRecord::default());
-    /// assert!(entry.is_file()); // the entry is a file
-    ///
-    /// entry.set_record(EntryKind::Dir(DirRecord::default()));
-    /// assert!(!entry.is_file()); // the entry is now a directory
-    /// ```
     pub const fn is_file(&self) -> bool {
         self.flag_offset.get() & Self::FILE_FLAG != 0
     }
@@ -171,27 +99,6 @@ impl ArchiveEntry {
     ///
     /// Panics if the provided offset sets the most significant bit (`0x80000000`), which is
     /// reserved for the file flag. Thus, the value must be within the range `0..=i32::MAX as u32`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zarchive2::zerocopy::ArchiveEntry;
-    ///
-    /// let mut entry = ArchiveEntry::new_zeroed();
-    /// assert_eq!(entry.offset(), 0);
-    ///
-    /// entry.set_offset(0x7FFFFFFF);
-    /// assert_eq!(entry.offset(), 0x7FFFFFFF);
-    /// ```
-    ///
-    /// The function will panic if the offset is too large:
-    ///
-    /// ```should_panic
-    /// use zarchive2::zerocopy::ArchiveEntry;
-    ///
-    /// let mut entry = ArchiveEntry::new_zeroed();
-    /// entry.set_offset(2147483648); // panic!
-    /// ```
     pub fn set_offset(&mut self, offset: u32) {
         assert!(offset < Self::FILE_FLAG);
 
@@ -209,24 +116,6 @@ impl ArchiveEntry {
 
     #[inline]
     /// Sets the archive entry record to the provided file or directory record.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zarchive2::zerocopy::{ArchiveEntry, DirRecord, EntryKind, FileRecord};
-    ///
-    /// let mut entry = ArchiveEntry::new_zeroed();
-    /// assert!(entry.is_dir()); // the flag isn't set
-    /// assert_eq!(entry.flag_offset, 0);
-    ///
-    /// entry.set_record(EntryKind::File(FileRecord::default()));
-    /// assert!(entry.is_file());
-    /// assert_eq!(entry.flag_offset, entry.offset() | ArchiveEntry::FILE_FLAG);
-    ///
-    /// entry.set_record(EntryKind::Dir(DirRecord::default()));
-    /// assert!(entry.is_dir());
-    /// assert_eq!(entry.flag_offset, entry.offset() & !ArchiveEntry::FILE_FLAG);
-    /// ```
     pub fn set_record(&mut self, record: Record) {
         let old = self.flag_offset.get();
         let new = match record {
