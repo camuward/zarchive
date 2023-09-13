@@ -7,18 +7,6 @@ pub use self::record::*;
 pub const COMPRESSED_BLOCK_SIZE: usize = 64 * 1024; // 64 KiB
 pub const ENTRIES_PER_OFFSETRECORD: usize = 16; // must be aligned to 2
 
-const fn get_u16(n: U16) -> u16 {
-    u16::from_be_bytes(unsafe { core::mem::transmute(n) })
-}
-
-const fn get_u32(n: U32) -> u32 {
-    u32::from_be_bytes(unsafe { core::mem::transmute(n) })
-}
-
-const fn get_u64(n: U64) -> u64 {
-    u64::from_be_bytes(unsafe { core::mem::transmute(n) })
-}
-
 mod entry;
 mod node;
 mod record;

@@ -30,6 +30,7 @@ impl ArchiveEntry {
     /// The flag for the file bit in the offset.
     pub const FILE_FLAG: u32 = 0x80000000;
 
+    #[inline]
     /// Creates a new `ArchiveEntry` with the provided name table offset and entry record.
     ///
     /// # Panics
@@ -56,13 +57,14 @@ impl ArchiveEntry {
     /// // since the flag isn't set, `.offset()` returns the same value
     /// assert_eq!(entry.flag_offset, entry.offset());
     /// ```
-    pub const fn new(offset: u32, record: Record) -> Self {
+    pub fn new(offset: u32, record: Record) -> Self {
         match record {
             Record::Dir(dir) => Self::new_dir(offset, dir),
             Record::File(file) => Self::new_file(offset, file),
         }
     }
 
+    #[inline]
     /// Creates a new `ArchiveEntry` with the provided name table offset and directory record.
     ///
     /// # Panics
@@ -82,15 +84,16 @@ impl ArchiveEntry {
     /// assert_eq!(entry.flag_offset & ArchiveEntry::FILE_FLAG, 0);
     /// assert_eq!(entry.flag_offset, entry.offset());
     /// ```
-    pub const fn new_dir(offset: u32, record: DirRecord) -> Self {
+    pub fn new_dir(offset: u32, record: DirRecord) -> Self {
         assert!(offset < Self::FILE_FLAG);
 
         Self {
-            flag_offset: U32::from_bytes((offset & !Self::FILE_FLAG).to_be_bytes()),
+            flag_offset: U32::new(offset & !Self::FILE_FLAG),
             record: EntryRecord { dir: record },
         }
     }
 
+    #[inline]
     /// Creates a new `ArchiveEntry` with the provided name table offset and file record.
     ///
     /// # Panics
@@ -112,15 +115,16 @@ impl ArchiveEntry {
     ///
     /// assert_eq!(entry.flag_offset, entry.offset() | ArchiveEntry::FILE_FLAG);
     /// ```
-    pub const fn new_file(offset: u32, record: FileRecord) -> Self {
+    pub fn new_file(offset: u32, record: FileRecord) -> Self {
         assert!(offset < Self::FILE_FLAG);
 
         Self {
-            flag_offset: U32::from_bytes((offset | Self::FILE_FLAG).to_be_bytes()),
+            flag_offset: U32::new(offset | Self::FILE_FLAG),
             record: EntryRecord { file: record },
         }
     }
 
+    #[inline]
     /// Whether the entry is a directory.
     ///
     /// # Examples
@@ -134,10 +138,11 @@ impl ArchiveEntry {
     /// entry.set_record(EntryKind::File(FileRecord::default()));
     /// assert!(!entry.is_dir()); // the entry is now a file
     /// ```
-    pub const fn is_dir(&self) -> bool {
-        get_u32(self.flag_offset) & Self::FILE_FLAG == 0
+    pub fn is_dir(&self) -> bool {
+        self.flag_offset.get() & Self::FILE_FLAG == 0
     }
 
+    #[inline]
     /// Whether the entry is a file.
     ///
     /// # Examples
@@ -151,14 +156,16 @@ impl ArchiveEntry {
     /// entry.set_record(EntryKind::Dir(DirRecord::default()));
     /// assert!(!entry.is_file()); // the entry is now a directory
     /// ```
-    pub const fn is_file(&self) -> bool {
-        get_u32(self.flag_offset) & Self::FILE_FLAG != 0
+    pub fn is_file(&self) -> bool {
+        self.flag_offset.get() & Self::FILE_FLAG != 0
     }
 
-    pub const fn offset(&self) -> u32 {
-        get_u32(self.flag_offset) & !Self::FILE_FLAG
+    #[inline]
+    pub fn offset(&self) -> u32 {
+        self.flag_offset.get() & !Self::FILE_FLAG
     }
 
+    #[inline]
     /// Sets the offset to the given value.
     ///
     /// # Panics
@@ -193,7 +200,8 @@ impl ArchiveEntry {
         self.flag_offset.set(offset | flag);
     }
 
-    pub const fn record(&self) -> Record {
+    #[inline]
+    pub fn record(&self) -> Record {
         if self.is_dir() {
             Record::Dir(unsafe { self.record.dir })
         } else {
@@ -260,16 +268,16 @@ pub struct FileRecord {
 }
 
 impl FileRecord {
-    pub const fn offset(&self) -> u64 {
-        let low = get_u32(self.offset_low) as u64;
-        let high = get_u16(self.offset_high) as u64;
+    pub fn offset(&self) -> u64 {
+        let low = self.offset_low.get() as u64;
+        let high = self.offset_high.get() as u64;
 
         low | high << 32
     }
 
-    pub const fn file_size(&self) -> u64 {
-        let low = get_u32(self.size_low) as u64;
-        let high = get_u16(self.size_high) as u64;
+    pub fn file_size(&self) -> u64 {
+        let low = self.size_low.get() as u64;
+        let high = self.size_high.get() as u64;
 
         low | high << 32
     }

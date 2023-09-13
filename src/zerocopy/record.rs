@@ -9,8 +9,8 @@ use super::*;
 pub struct CompressionOffsetRecord {
     // for every Nth entry we store the full 64bit offset, the blocks in between calculate the
     // offset from the size array
-    pub base_offset: U64,
-    pub size: [U16; ENTRIES_PER_OFFSETRECORD], // compressed size - 1
+    base_offset: U64,
+    size: [U16; ENTRIES_PER_OFFSETRECORD], // compressed size - 1
 }
 
 #[repr(C)]
@@ -40,14 +40,14 @@ pub struct Sections {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[derive(AsBytes, FromBytes, FromZeroes, Unaligned)]
 pub struct OffsetInfo {
-    pub offset: U64,
-    pub size: U64,
+    offset: U64,
+    size: U64,
 }
 
 impl OffsetInfo {
-    pub const fn is_in_range(&self, archive_len: u64) -> bool {
-        let offset = get_u64(self.offset);
-        let size = get_u64(self.size);
+    pub fn is_in_range(&self, archive_len: u64) -> bool {
+        let offset = self.offset.get();
+        let size = self.size.get();
 
         match offset.checked_add(size) {
             Some(end) => end <= archive_len,
