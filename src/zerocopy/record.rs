@@ -1,4 +1,3 @@
-use zerocopy::big_endian::{U16, U32, U64};
 use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
 
 use super::*;
@@ -45,7 +44,7 @@ pub struct OffsetInfo {
 }
 
 impl OffsetInfo {
-    pub fn is_in_range(&self, archive_len: u64) -> bool {
+    pub const fn is_in_range(&self, archive_len: u64) -> bool {
         let offset = self.offset.get();
         let size = self.size.get();
 

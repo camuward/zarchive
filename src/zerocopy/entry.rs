@@ -1,4 +1,3 @@
-use zerocopy::big_endian::{U16, U32};
 use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
 
 use super::*;
@@ -57,7 +56,7 @@ impl ArchiveEntry {
     /// // since the flag isn't set, `.offset()` returns the same value
     /// assert_eq!(entry.flag_offset, entry.offset());
     /// ```
-    pub fn new(offset: u32, record: Record) -> Self {
+    pub const fn new(offset: u32, record: Record) -> Self {
         match record {
             Record::Dir(dir) => Self::new_dir(offset, dir),
             Record::File(file) => Self::new_file(offset, file),
@@ -84,7 +83,7 @@ impl ArchiveEntry {
     /// assert_eq!(entry.flag_offset & ArchiveEntry::FILE_FLAG, 0);
     /// assert_eq!(entry.flag_offset, entry.offset());
     /// ```
-    pub fn new_dir(offset: u32, record: DirRecord) -> Self {
+    pub const fn new_dir(offset: u32, record: DirRecord) -> Self {
         assert!(offset < Self::FILE_FLAG);
 
         Self {
@@ -115,7 +114,7 @@ impl ArchiveEntry {
     ///
     /// assert_eq!(entry.flag_offset, entry.offset() | ArchiveEntry::FILE_FLAG);
     /// ```
-    pub fn new_file(offset: u32, record: FileRecord) -> Self {
+    pub const fn new_file(offset: u32, record: FileRecord) -> Self {
         assert!(offset < Self::FILE_FLAG);
 
         Self {
@@ -138,7 +137,7 @@ impl ArchiveEntry {
     /// entry.set_record(EntryKind::File(FileRecord::default()));
     /// assert!(!entry.is_dir()); // the entry is now a file
     /// ```
-    pub fn is_dir(&self) -> bool {
+    pub const fn is_dir(&self) -> bool {
         self.flag_offset.get() & Self::FILE_FLAG == 0
     }
 
@@ -156,12 +155,12 @@ impl ArchiveEntry {
     /// entry.set_record(EntryKind::Dir(DirRecord::default()));
     /// assert!(!entry.is_file()); // the entry is now a directory
     /// ```
-    pub fn is_file(&self) -> bool {
+    pub const fn is_file(&self) -> bool {
         self.flag_offset.get() & Self::FILE_FLAG != 0
     }
 
     #[inline]
-    pub fn offset(&self) -> u32 {
+    pub const fn offset(&self) -> u32 {
         self.flag_offset.get() & !Self::FILE_FLAG
     }
 
@@ -200,8 +199,7 @@ impl ArchiveEntry {
         self.flag_offset.set(offset | flag);
     }
 
-    #[inline]
-    pub fn record(&self) -> Record {
+    pub const fn record(&self) -> Record {
         if self.is_dir() {
             Record::Dir(unsafe { self.record.dir })
         } else {
@@ -268,14 +266,14 @@ pub struct FileRecord {
 }
 
 impl FileRecord {
-    pub fn offset(&self) -> u64 {
+    pub const fn offset(&self) -> u64 {
         let low = self.offset_low.get() as u64;
         let high = self.offset_high.get() as u64;
 
         low | high << 32
     }
 
-    pub fn file_size(&self) -> u64 {
+    pub const fn file_size(&self) -> u64 {
         let low = self.size_low.get() as u64;
         let high = self.size_high.get() as u64;
 

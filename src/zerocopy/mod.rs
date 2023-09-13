@@ -1,7 +1,6 @@
-use zerocopy::big_endian::{U16, U32, U64};
-
 pub use self::entry::*;
 pub use self::node::*;
+pub use self::order::*;
 pub use self::record::*;
 
 pub const COMPRESSED_BLOCK_SIZE: usize = 64 * 1024; // 64 KiB
@@ -9,6 +8,7 @@ pub const ENTRIES_PER_OFFSETRECORD: usize = 16; // must be aligned to 2
 
 mod entry;
 mod node;
+mod order;
 mod record;
 
 const _: () = {
