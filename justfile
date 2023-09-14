@@ -1,4 +1,5 @@
-_default: ci
+default:
+    @just --choose
 
 ci: check-all test-all
     cargo clippy --all --all-features -- -D warnings
