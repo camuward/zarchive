@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use zerocopy::big_endian as be;
 use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
 

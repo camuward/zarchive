@@ -6,27 +6,31 @@ license = "MIT OR Apache-2.0"
 description = "low-level library for manipulating the zarchive format"
 
 [features]
-default = ["alloc", "std", "zerocopy"]
+default = ["alloc", "memmap", "std", "universal", "zerocopy"]
 alloc = [
     "core2/alloc",
     "encoding_rs/alloc",
     "unix_path/alloc",
     "zerocopy/alloc",
 ]
+memmap = ["dep:memmap2", "std"]
 std = [
+    "alloc",
     "core2/std",
     "thiserror_core2/std",
     "unix_path/std",
     "dep:zstd",
     "zstd-safe/std",
 ]
+universal = []
 zerocopy = ["dep:zerocopy"]
 
 [dependencies]
-core2 = { version = "0.4.0", default-features = false }
+core2 = { version = "0.4.0", default-features = false, optional = true }
 encoding_rs = { version = "0.8.33", default-features = false }
+memmap2 = { version = "0.7.1", optional = true }
 thiserror_core2 = { version = "2.0.1", default-features = false }
 unix_path = { version = "1.0.1", default-features = false }
-zerocopy = { version = "0.7.0", features = ["derive"], optional = true }
+zerocopy = { version = "0.7.3", features = ["derive"], optional = true }
 zstd = { version = "0.12.4", optional = true }
 zstd-safe = { version = "6.0.6", default-features = false }
