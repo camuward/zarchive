@@ -1,6 +1,7 @@
+use zarchive_derive::Valid;
 use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
 
-use super::*;
+use super::big_endian::{U16, U32};
 
 /// Rust representation of an entry record.
 pub enum Record {
@@ -12,8 +13,9 @@ pub enum Record {
 #[derive(Clone, Copy, AsBytes, FromBytes, FromZeroes, Unaligned)]
 /// An entry in the archive. Represents either a directory or a file.
 pub struct ArchiveEntry {
-    /// Offset into the node name table. The most significant bit is a flag representing whether
-    /// the entry is a file (`true`) or directory (`false`).
+    /// Offset into the node name table. The most significant bit is a flag
+    /// representing whether the entry is a file (`true`) or directory
+    /// (`false`).
     flag_offset: U32,
     record: EntryRecord,
 }
@@ -30,12 +32,13 @@ impl ArchiveEntry {
     pub const FILE_FLAG: u32 = 0x80000000;
 
     #[inline]
-    /// Creates a new `ArchiveEntry` with the provided name table offset and entry record.
+    /// Creates a new entry with the provided name table offset.
     ///
     /// # Panics
     ///
-    /// Panics if the provided offset sets the most significant bit (`0x80000000`), which is
-    /// reserved for the file flag. Thus, the value must be within the range `0..=i32::MAX as u32`.
+    /// Panics if the provided offset sets the most significant bit
+    /// (`0x80000000`), which is reserved for the file flag. Thus, the value
+    /// must be within the range `0..=i32::MAX as u32`.
     pub const fn new(offset: u32, record: Record) -> Self {
         match record {
             Record::Dir(dir) => Self::new_dir(offset, dir),
@@ -44,12 +47,13 @@ impl ArchiveEntry {
     }
 
     #[inline]
-    /// Creates a new `ArchiveEntry` with the provided name table offset and directory record.
+    /// Creates a directory record with the provided name table offset.
     ///
     /// # Panics
     ///
-    /// Panics if the provided offset sets the most significant bit (`0x80000000`), which is
-    /// reserved for the file flag. Thus, the value must be within the range `0..=i32::MAX as u32`.
+    /// Panics if the provided offset sets the most significant bit
+    /// (`0x80000000`), which is reserved for the file flag. Thus, the value
+    /// must be within the range `0..=i32::MAX as u32`.
     pub const fn new_dir(offset: u32, record: DirRecord) -> Self {
         assert!(offset < Self::FILE_FLAG);
 
@@ -60,12 +64,13 @@ impl ArchiveEntry {
     }
 
     #[inline]
-    /// Creates a new `ArchiveEntry` with the provided name table offset and file record.
+    /// Creates a file record with the provided name table offset.
     ///
     /// # Panics
     ///
-    /// Panics if the provided offset sets the most significant bit (`0x80000000`), which is
-    /// reserved for the file flag. Thus, the value must be within the range `0..=i32::MAX as u32`.
+    /// Panics if the provided offset sets the most significant bit
+    /// (`0x80000000`), which is reserved for the file flag. Thus, the value
+    /// must be within the range `0..=i32::MAX as u32`.
     pub const fn new_file(offset: u32, record: FileRecord) -> Self {
         assert!(offset < Self::FILE_FLAG);
 
@@ -78,18 +83,18 @@ impl ArchiveEntry {
     #[inline]
     /// Whether the entry is a directory.
     pub const fn is_dir(&self) -> bool {
-        self.flag_offset.get() & Self::FILE_FLAG == 0
+        self.flag_offset.swap() & Self::FILE_FLAG == 0
     }
 
     #[inline]
     /// Whether the entry is a file.
     pub const fn is_file(&self) -> bool {
-        self.flag_offset.get() & Self::FILE_FLAG != 0
+        self.flag_offset.swap() & Self::FILE_FLAG != 0
     }
 
     #[inline]
     pub const fn offset(&self) -> u32 {
-        self.flag_offset.get() & !Self::FILE_FLAG
+        self.flag_offset.swap() & !Self::FILE_FLAG
     }
 
     #[inline]
@@ -97,12 +102,13 @@ impl ArchiveEntry {
     ///
     /// # Panics
     ///
-    /// Panics if the provided offset sets the most significant bit (`0x80000000`), which is
-    /// reserved for the file flag. Thus, the value must be within the range `0..=i32::MAX as u32`.
+    /// Panics if the provided offset sets the most significant bit
+    /// (`0x80000000`), which is reserved for the file flag. Thus, the value
+    /// must be within the range `0..=i32::MAX as u32`.
     pub fn set_offset(&mut self, offset: u32) {
         assert!(offset < Self::FILE_FLAG);
 
-        let flag = self.flag_offset.get() & Self::FILE_FLAG;
+        let flag = self.flag_offset.swap() & Self::FILE_FLAG;
         self.flag_offset.set(offset | flag);
     }
 
@@ -117,7 +123,7 @@ impl ArchiveEntry {
     #[inline]
     /// Sets the archive entry record to the provided file or directory record.
     pub fn set_record(&mut self, record: Record) {
-        let old = self.flag_offset.get();
+        let old = self.flag_offset.swap();
         let new = match record {
             Record::Dir(dir) => {
                 self.record.dir = dir;
@@ -139,8 +145,7 @@ impl ArchiveEntry {
 pub struct DirRecord {
     pub node_start_ind: U32,
     pub count: U32,
-
-    _reserved: [U32; 1],
+    _reserved: [u8; 4],
 }
 
 #[repr(C)]
@@ -156,15 +161,15 @@ pub struct FileRecord {
 
 impl FileRecord {
     pub const fn offset(&self) -> u64 {
-        let low = self.offset_low.get() as u64;
-        let high = self.offset_high.get() as u64;
+        let low = self.offset_low.swap() as u64;
+        let high = self.offset_high.swap() as u64;
 
         low | high << 32
     }
 
     pub const fn file_size(&self) -> u64 {
-        let low = self.size_low.get() as u64;
-        let high = self.size_high.get() as u64;
+        let low = self.size_low.swap() as u64;
+        let high = self.size_high.swap() as u64;
 
         low | high << 32
     }

@@ -1,15 +1,15 @@
+#![allow(dead_code, unused_imports)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(feature = "universal")]
-/// Generic archive manipulation using [`Read`] and [`Write`] traits
-pub mod universal;
+pub mod archive;
+pub mod error;
 
-#[cfg(feature = "zerocopy")]
-/// Zero-copy archive manipulation
-pub mod zerocopy;
+pub struct ZArchive<T: archive::Archive + ?Sized> {
+    inner: T,
+}
 
 #[cfg(feature = "std")]
 pub use self::std::*;
@@ -20,29 +20,21 @@ mod std {
     use std::io::{self, Read, Seek, Write};
     use std::path::Path;
 
-    #[cfg(feature = "memmap")]
-    use memmap2::{Mmap, MmapMut};
+    use crate::ZArchive;
 
-    #[cfg(feature = "universal")]
-    use super::universal;
+    // pub fn open_file(path: &Path) -> io::Result<ZArchive<Mmap>> {
+    //     let mmap = unsafe { Mmap::map(&File::open(path)?)? };
+    //     let archive = ZArchive::new(mmap);
+    //     archive.check()?;
 
-    #[cfg(feature = "zerocopy")]
-    use super::zerocopy;
-
-    #[cfg(all(feature = "memmap", feature = "zerocopy"))]
-    pub fn open_file(path: &Path) -> io::Result<zerocopy::Archive<Mmap>> {
-        let mmap = unsafe { Mmap::map(&File::open(path)?)? };
-        let archive = zerocopy::Archive::new(mmap);
-        archive.check()?;
-
-        Ok(archive)
-    }
+    //     Ok(archive)
+    // }
 
     // #[cfg(all(feature = "memmap", feature = "zerocopy"))]
-    // pub fn open_file_mut(path: &Path) -> io::Result<zerocopy::Archive<MmapMut>> {
-    //     let mmap = unsafe { MmapMut(&File::open(path)?)? };
-    //     let archive = zerocopy::Archive::new(mmap);
-    //     archive.check()?;
+    // pub fn open_file_mut(path: &Path) ->
+    // io::Result<zerocopy::Archive<MmapMut>> {     let mmap = unsafe {
+    // MmapMut(&File::open(path)?)? };     let archive =
+    // zerocopy::Archive::new(mmap);     archive.check()?;
 
     //     Ok(archive)
     // }
@@ -50,8 +42,7 @@ mod std {
     // #[cfg(feature = "universal")]
     // pub fn open_reader(
     //     reader: impl Read + Seek,
-    // ) -> io::Result<universal::Archive<impl Read + Seek>> {
-    //     todo!()
+    // ) -> io::Result<universal::Archive<impl Read + Seek>> { todo!()
     // }
 }
 

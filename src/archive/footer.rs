@@ -1,6 +1,7 @@
+use zarchive_derive::*;
 use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
 
-use super::*;
+use super::big_endian::{U16, U32, U64};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -9,7 +10,12 @@ pub struct CompressionOffsetRecord {
     // for every Nth entry we store the full 64bit offset, the blocks in between calculate the
     // offset from the size array
     base_offset: U64,
-    size: [U16; ENTRIES_PER_OFFSETRECORD], // compressed size - 1
+    size: [U16; Self::ENTRIES], // compressed size - 1
+}
+
+impl CompressionOffsetRecord {
+    /// The number of entries per offset record.
+    pub const ENTRIES: usize = 16; // must be aligned to 2
 }
 
 #[repr(C)]
@@ -19,7 +25,9 @@ pub struct Footer {
     sections: Sections,
     integrity_hash: [u8; 32],
     total_size: U64,
+    // #[valid(|m| m == 0x61bf_3a01)]
     version: U32,
+    // #[valid(|m| m == 0x169f_52d6)]
     magic: U32,
 }
 
@@ -45,8 +53,8 @@ pub struct OffsetInfo {
 
 impl OffsetInfo {
     pub const fn is_in_range(&self, archive_len: u64) -> bool {
-        let offset = self.offset.get();
-        let size = self.size.get();
+        let offset = self.offset.swap();
+        let size = self.size.swap();
 
         match offset.checked_add(size) {
             Some(end) => end <= archive_len,
