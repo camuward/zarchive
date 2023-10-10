@@ -25,7 +25,7 @@ pub struct Footer {
     sections: Sections,
     integrity_hash: [u8; 32],
     total_size: U64,
-    // #[valid(|m| m == 0x61bf_3a01)]
+    // #[valid(|m| m == 0x61bf_3a01))]
     version: U32,
     // #[valid(|m| m == 0x169f_52d6)]
     magic: U32,

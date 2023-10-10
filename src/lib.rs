@@ -4,11 +4,31 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+use self::archive::Entries;
+
 pub mod archive;
 pub mod error;
 
-pub struct ZArchive<T: archive::Archive + ?Sized> {
-    inner: T,
+pub struct ZArchive<A: archive::Archive + ?Sized> {
+    inner: A,
+}
+
+impl<A: archive::Archive> ZArchive<A> {
+    pub fn new(archive: A) -> Result<Self, error::Invalid> {
+        // the inner archive must always be valid
+        archive.check()?;
+        Ok(Self { inner: archive })
+    }
+
+    pub fn into_inner(self) -> A {
+        self.inner
+    }
+}
+
+impl<A: archive::Archive + ?Sized> ZArchive<A> {
+    pub fn entries(&self) -> Entries<'_> {
+        todo!()
+    }
 }
 
 #[cfg(feature = "std")]

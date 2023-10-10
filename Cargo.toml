@@ -10,6 +10,7 @@ default = ["alloc", "std"]
 alloc = [
     "core2/alloc",
     "encoding_rs/alloc",
+    "unix_str/alloc",
     "unix_path/alloc",
     "zerocopy/alloc",
 ]
@@ -17,6 +18,7 @@ std = [
     "alloc",
     "core2/std",
     "thiserror_core2/std",
+    "unix_str/std",
     "unix_path/std",
     "dep:zstd",
     "zstd-safe/std",
@@ -27,6 +29,7 @@ core2 = { version = "0.4.0", default-features = false }
 displaydoc = "0.2.4"
 encoding_rs = { version = "0.8.33", default-features = false }
 thiserror_core2 = { version = "2.0.1", default-features = false }
+unix_str = { version = "1.0.0", default-features = false }
 unix_path = { version = "1.0.1", default-features = false }
 zerocopy = { version = "0.7.8", features = ["derive"] }
 zstd = { version = "0.12.4", optional = true }
