@@ -1,7 +1,6 @@
-use zarchive_derive::Valid;
 use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
 
-use super::big_endian::{U16, U32};
+use crate::raw::big_endian::{U16, U32};
 
 /// Rust representation of an entry record.
 pub enum Record {

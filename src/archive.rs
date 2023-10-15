@@ -1,61 +1,70 @@
-use core2::io::{self, Read, Seek, Write};
+use core::marker::PhantomData;
+use core::ptr::NonNull;
 
-use crate::error::Invalid;
-
-use self::{entry::ArchiveEntry, footer::Footer};
-
-pub mod adapter;
-mod big_endian;
-mod entry;
-mod footer;
-mod node;
-
-#[cfg(feature = "std")]
-mod file;
+use crate::error::CheckErr;
+use crate::raw::footer::Footer;
 
 pub const COMPRESSED_BLOCK_SIZE: usize = 64 * 1024; // 64 KiB
 
 pub trait Archive {
-    fn check(&self) -> Result<(), Invalid>;
+    type Inner: ArchiveInner;
+
+    fn to_archive(self) -> Result<Self::Inner, CheckErr>;
+    fn from_inner(inner: Self::Inner) -> Self;
 }
 
-trait SeekRead: Read + Seek {}
-impl<R: Read + Seek> SeekRead for R {}
+pub trait ArchiveInner {
+    fn check(&self) -> Result<(), CheckErr>;
+}
 
-struct ReadArchive(dyn SeekRead);
-impl ReadArchive {
-    fn footer(&self) -> io::Result<Footer> {
-        todo!()
+impl<I: ArchiveInner> Archive for I {
+    type Inner = I;
+
+    fn to_archive(self) -> Result<Self::Inner, CheckErr> {
+        self.check()?;
+        Ok(self)
+    }
+
+    fn from_inner(inner: Self::Inner) -> Self {
+        inner
     }
 }
-
-struct MemArchive<'a>(&'a [u8]);
-impl MemArchive<'_> {
-    fn footer(&self) -> zerocopy::Ref<&[u8], Footer> {
-        zerocopy::Ref::new_unaligned_from_suffix(self.0).unwrap().1
-    }
-}
-
-struct WriteArchive(dyn Write);
 
 /// An iterator over the entries of an archive.
 pub struct Entries<'a> {
-    archive: &'a dyn Archive,
-    footer: Footer,
+    _p: PhantomData<&'a ()>,
+    archive: NonNull<()>, // type-erased ptr to ArchiveInner
+    check_fn: unsafe fn(NonNull<()>) -> Result<(), CheckErr>,
+
+    index: usize,
 }
 
-impl Iterator for Entries<'_> {
-    type Item = io::Result<ArchiveEntry>;
+impl Entries<'_> {
+    pub(crate) fn new<A: ArchiveInner>(archive: &A) -> Self {
+        Self {
+            _p: PhantomData,
+            archive: NonNull::from(archive).cast(),
+            check_fn: |inner| A::check(unsafe { inner.cast::<A>().as_ref() }),
+
+            index: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for Entries<'a> {
+    type Item = (); // TODO
 
     fn next(&mut self) -> Option<Self::Item> {
         todo!()
     }
 }
 
-const _: () = {
-    use core::mem::size_of;
+pub(crate) struct Cache<A> {
+    pub footer: Footer,
+    pub inner: A,
+}
 
-    assert!(size_of::<entry::ArchiveEntry>() == 16);
-    assert!(size_of::<footer::Footer>() == 16 * 6 + 32 + 8 + 4 + 4);
-    assert!(size_of::<footer::CompressionOffsetRecord>() == 8 + 16 * 2);
-};
+pub mod adapter;
+
+#[cfg(feature = "std")]
+mod file;

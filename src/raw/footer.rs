@@ -1,7 +1,6 @@
-use zarchive_derive::*;
 use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
 
-use super::big_endian::{U16, U32, U64};
+use crate::raw::big_endian::{U16, U32, U64};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -25,10 +24,28 @@ pub struct Footer {
     sections: Sections,
     integrity_hash: [u8; 32],
     total_size: U64,
-    // #[valid(|m| m == 0x61bf_3a01))]
+    // #[valid(|m| m == 0x61bf_3a01)]
     version: U32,
     // #[valid(|m| m == 0x169f_52d6)]
     magic: U32,
+}
+
+impl Footer {
+    pub const MAGIC: u32 = 0x169f_52d6;
+    pub const VERSION: u32 = 0x61bf_3a01;
+    pub const LEN: usize = core::mem::size_of::<Self>();
+
+    pub fn sections(&self) -> &Sections {
+        &self.sections
+    }
+
+    pub fn integrity_hash(&self) -> &[u8; 32] {
+        &self.integrity_hash
+    }
+
+    pub fn total_size(&self) -> u64 {
+        self.total_size.swap()
+    }
 }
 
 #[repr(C)]

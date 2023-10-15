@@ -1,34 +1,61 @@
-#![allow(dead_code, unused_imports)]
+#![allow(dead_code)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-use self::archive::Entries;
+use core2::io::{Read, Seek};
+
+use self::archive::{adapter, Archive, ArchiveInner, Entries};
+use self::error::CheckErr;
+
+pub struct ZArchive<A: archive::Archive + ?Sized> {
+    inner: A::Inner,
+}
+
+impl<A: Archive + ?Sized> ZArchive<A> {
+    pub fn new(archive: A) -> Result<Self, CheckErr>
+    where
+        A: Sized,
+    {
+        let inner = archive.to_archive()?;
+        ArchiveInner::check(&inner)?;
+        Ok(Self { inner })
+    }
+
+    pub fn new_reader<R: Read + Seek>(
+        reader: &mut R,
+    ) -> Result<ZArchive<adapter::Reader<'_>>, CheckErr> {
+        ZArchive::new(adapter::Reader::new(reader))
+    }
+
+    pub fn into_inner(self) -> A
+    where
+        A: Sized,
+    {
+        A::from_inner(self.inner)
+    }
+
+    pub fn entries(&self) -> Entries<'_> {
+        Entries::new(&self.inner)
+    }
+}
 
 pub mod archive;
 pub mod error;
 
-pub struct ZArchive<A: archive::Archive + ?Sized> {
-    inner: A,
-}
+mod raw {
+    pub mod big_endian;
+    pub mod entry;
+    pub mod footer;
 
-impl<A: archive::Archive> ZArchive<A> {
-    pub fn new(archive: A) -> Result<Self, error::Invalid> {
-        // the inner archive must always be valid
-        archive.check()?;
-        Ok(Self { inner: archive })
-    }
+    const _: () = {
+        use core::mem::size_of;
 
-    pub fn into_inner(self) -> A {
-        self.inner
-    }
-}
-
-impl<A: archive::Archive + ?Sized> ZArchive<A> {
-    pub fn entries(&self) -> Entries<'_> {
-        todo!()
-    }
+        assert!(size_of::<entry::ArchiveEntry>() == 16);
+        assert!(size_of::<footer::Footer>() == 16 * 6 + 32 + 8 + 4 + 4);
+        assert!(size_of::<footer::CompressionOffsetRecord>() == 8 + 16 * 2);
+    };
 }
 
 #[cfg(feature = "std")]
@@ -36,11 +63,6 @@ pub use self::std::*;
 
 #[cfg(feature = "std")]
 mod std {
-    use std::fs::File;
-    use std::io::{self, Read, Seek, Write};
-    use std::path::Path;
-
-    use crate::ZArchive;
 
     // pub fn open_file(path: &Path) -> io::Result<ZArchive<Mmap>> {
     //     let mmap = unsafe { Mmap::map(&File::open(path)?)? };
