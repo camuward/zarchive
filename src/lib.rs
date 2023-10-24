@@ -49,6 +49,10 @@ mod raw {
     pub mod entry;
     pub mod footer;
 
+    pub trait Valid {
+        fn check(&self) -> Result<(), Invalid>;
+    }
+
     const _: () = {
         use core::mem::size_of;
 
