@@ -45,6 +45,11 @@ pub mod archive;
 pub mod error;
 
 mod raw {
+    use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
+
+    use self::big_endian::{U16, U32, U64};
+    use crate::error::Invalid;
+
     pub mod big_endian;
     pub mod entry;
     pub mod footer;

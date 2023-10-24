@@ -1,6 +1,4 @@
-use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
-
-use crate::raw::big_endian::{U16, U32, U64};
+use super::*;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -34,17 +32,25 @@ impl Footer {
     pub const MAGIC: u32 = 0x169f_52d6;
     pub const VERSION: u32 = 0x61bf_3a01;
     pub const LEN: usize = core::mem::size_of::<Self>();
+}
 
-    pub fn sections(&self) -> &Sections {
-        &self.sections
-    }
+impl Valid for Footer {
+    fn check(&self) -> Result<(), Invalid> {
+        let magic = self.magic.swap();
+        if magic != Self::MAGIC {
+            return Err(Invalid::Magic(magic));
+        }
+
+        let version = self.version.swap();
+        if version != Self::VERSION {
+            return Err(Invalid::Version(version));
+        }
 
     pub fn integrity_hash(&self) -> &[u8; 32] {
         &self.integrity_hash
     }
 
-    pub fn total_size(&self) -> u64 {
-        self.total_size.swap()
+        Ok(())
     }
 }
 
