@@ -46,9 +46,26 @@ impl Valid for Footer {
             return Err(Invalid::Version(version));
         }
 
-    pub fn integrity_hash(&self) -> &[u8; 32] {
-        &self.integrity_hash
-    }
+        let sections = {
+            let s = self.sections;
+            [s.compressed_data, s.offset_records, s.names, s.file_tree, s.meta_dir, s.meta_data]
+                .into_iter()
+                .zip([
+                    "compressed_data",
+                    "offset_records",
+                    "names",
+                    "file_tree",
+                    "meta_dir",
+                    "meta_data",
+                ])
+        };
+
+        let size = self.total_size.swap();
+        for (section, name) in sections {
+            if !section.is_in_range(size) {
+                return Err(Invalid::Section(name));
+            }
+        }
 
         Ok(())
     }

@@ -24,4 +24,6 @@ pub enum Invalid {
     /// Unexpected version.
     #[error("expected version {:#X}, found {0:#X}", Footer::VERSION)]
     Version(u32),
+    #[error("section {0} out of range")]
+    Section(&'static str),
 }
